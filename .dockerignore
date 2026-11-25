@@ -19,5 +19,6 @@ docs
 input
 *.md
 !README.md
-tests
+# `tests` is intentionally included: CI runs the gates inside this image with no bind
+# mount, so the image must carry the test suite, phpunit.xml, pint.json and phpstan.neon.
 .phpunit.result.cache

@@ -1,0 +1,25 @@
+# CI overlay: run the gates against the *built image*, not a bind-mounted checkout.
+#
+# compose.yaml bind-mounts the repository for a live-edit development loop. In CI the
+# checkout has no `vendor/`, so the mount would shadow the dependencies installed during
+# the image build and every gate would fail on a missing autoloader. `!reset []` removes
+# the mount, which also makes CI exercise exactly the artifact that gets deployed.
+#
+# `user: root` is intentional and CI-only: the image runs as www-data, but Pest and PHPStan
+# write caches into `vendor/` and `storage/`, which are root-owned inside the image. Running
+# the gates as root keeps the log free of permission warnings without loosening the
+# production image.
+#
+# Usage: docker compose -f compose.yaml -f compose.ci.yaml run --rm app php artisan test
+
+services:
+  app:
+    user: root
+    volumes: !reset []
+
+  queue:
+    user: root
+    volumes: !reset []
+
+  nginx:
+    volumes: !reset []

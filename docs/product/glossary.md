@@ -13,7 +13,7 @@
 
 | Persian | English (canonical) | Meaning in this product | Module | First source |
 |---|---|---|---|---|
-| سامانه دکوالیف | Dekolife platform | The product; the whole multi-vendor system | — | page 1 / ماده ۱ |
+| سامانه دکولایف | Dekolife platform | The product; the whole multi-vendor system | — | page 1 / ماده ۱ |
 | سطح کاربری | user level / role | One of the five independent levels; implemented as a role, not a column | Identity | page 5 / پیوست ۳ opening |
 | سطح ثانویه | secondary level | An optional second role granted to a user by admin | Identity | page 9 / پیوست ۷ / بند ۶ |
 | فروشگاه | store | Goods-providing shop on the platform; the wholesale buyer | Merchants | page 5 / پیوست ۳ / ۳-۱ |

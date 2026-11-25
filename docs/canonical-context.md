@@ -8,7 +8,7 @@
 
 ## 0. Mission (this mission's scope)
 
-Build the **web application** of the Dekolife platform (سامانه دکوالیف) as specified by the
+Build the **web application** of the Dekolife platform (سامانه دکولایف) as specified by the
 signed contract and its 13 appendices (`input/contract/`), plus 14 appendices of feature
 detail. Deliverable now: documentation baseline → repository + CI → phased implementation of
 the web product.

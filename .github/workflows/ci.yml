@@ -13,76 +13,69 @@ concurrency:
 env:
   PHP_VERSION: "8.4"
   NODE_VERSION: "22"
+  # Every `docker compose` call in this workflow uses the CI overlay (no bind mounts).
+  COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
 jobs:
   backend:
-    name: Backend (Pint · PHPStan · Pest)
+    name: Backend (Pint · PHPStan · Pest on MySQL)
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        # Same tag as compose.yaml; public ECR mirrors the official image.
-        image: public.ecr.aws/docker/library/mysql:8.4
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: dekolife_test
-          MYSQL_USER: dekolife
-          MYSQL_PASSWORD: secret
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=30
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: pdo_mysql, bcmath, intl, zip, gd, exif, pcntl, mbstring, xml, ctype, json, openssl, tokenizer, fileinfo
-          coverage: none
-          tools: composer:v2
+      # The gates run inside the same container developers use, against the same MySQL
+      # image and hostname as compose.yaml. Running Pint/PHPStan/Pest on the bare runner
+      # is faster but proves a different stack than the one we ship, and a hostname
+      # mismatch (mysql vs 127.0.0.1) would only surface after delivery.
+      - name: Build application image
+        run: docker compose build app
 
-      - name: Cache Composer packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
+      - name: Start MySQL and mail catcher
+        run: docker compose up -d mysql mailpit
+
+      - name: Wait for MySQL to accept connections
+        run: |
+          for i in $(seq 1 60); do
+            if docker compose exec -T mysql mysqladmin ping -h127.0.0.1 -uroot -proot --silent >/dev/null 2>&1; then
+              echo "MySQL ready after ${i} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become ready"
+          docker compose logs mysql
+          exit 1
+
+      - name: Ensure the test database exists and is granted
+        run: |
+          docker compose exec -T mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS dekolife_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON dekolife_test.* TO 'dekolife'@'%'; FLUSH PRIVILEGES;"
 
       - name: Composer validate
-        run: composer validate --strict --no-check-publish
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Prepare environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate --ansi
+        run: docker compose run --rm --no-deps app composer validate --strict --no-check-publish
 
       - name: Code style (Pint)
-        run: ./vendor/bin/pint --test
+        run: docker compose run --rm --no-deps app ./vendor/bin/pint --test
 
       - name: Static analysis (PHPStan)
-        run: ./vendor/bin/phpstan analyse --no-progress --error-format=github
+        run: docker compose run --rm --no-deps app ./vendor/bin/phpstan analyse --no-progress --error-format=github
 
       - name: Tests (Pest on MySQL)
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: "3306"
-          DB_DATABASE: dekolife_test
-          DB_USERNAME: dekolife
-          DB_PASSWORD: secret
-        run: php artisan test --colors=never
+        # A container has no `.env` (deliberately: secrets never ship in the image), and
+        # phpdotenv warns on a missing file, which Pest reports as a test warning. The
+        # test credentials come from phpunit.xml; this only silences the file read.
+        run: docker compose run --rm --no-deps app sh -c 'cp .env.example .env && php artisan test --colors=never'
 
       - name: Dependency audit
-        run: composer audit --no-interaction
+        run: docker compose run --rm --no-deps app composer audit --no-interaction
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --tail=100
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes
 
   frontend:
     name: Frontend (lint · build)

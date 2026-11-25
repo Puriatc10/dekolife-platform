@@ -1,4 +1,4 @@
-# Dekolife Platform (سامانه دکوالیف)
+# Dekolife Platform (سامانه دکولایف)
 
 Multi-vendor B2B/B2C marketplace for decoration and building-finish materials, with a
 tiered-pricing engine, a points/reward/wallet system and a field-sales (بازاریاب) network.

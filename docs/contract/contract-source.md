@@ -17,7 +17,7 @@
 | SHA-256 | `9685608e40947d5a9a859a444419d5d87b4b4367dccd6ebebfb20c6ed1f288a2` |
 | Contract number | `DK-1405-01` (printed as `-1405-01DK`, reversed by the extractor) |
 | Title | «قرارداد طراحی و پیادهسازی وبسایت چندفروشندگی، سیستم بازاریابی، امتیاز و پاداش پلکانی همراه با اپلیکیشن موبایل» |
-| Subject system | سامانه دکولایف (also spelled دکوالیف / دکالیف in the document — three spellings of the same product name) |
+| Subject system | سامانه دکولایف (also spelled دکولایف / دکالیف in the document — three spellings of the same product name) |
 | Language | Persian; numerals printed in Persian/Arabic-Indic digits (`۹۰٬۰۰۰٬۰۰۰`) |
 | Document status (page 1) | «پیشنویس نسخه ۱ — در انتظار توافق و امضای طرفین» — i.e. the file states it is an **unsigned draft v1** |
 | Signature block (page 11) | Four dated boxes: employer, contractor, witness 1, witness 2 — **all dates blank** |

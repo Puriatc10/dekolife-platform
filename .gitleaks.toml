@@ -1,0 +1,13 @@
+# gitleaks configuration.
+#
+# The default ruleset stays active; the only tolerances are the documented example
+# identifiers in docs/, which are ULIDs used to illustrate idempotency keys. They are
+# high-entropy strings, so the generic-api-key heuristic flags them; they are not
+# credentials and nothing is gained by weakening the rest of the scan.
+
+[allowlist]
+description = "Example ULIDs in documentation"
+regexTarget = "match"
+regexes = [
+    '''\b01[0-9A-HJKMNP-TV-Z]{24}\b''',
+]

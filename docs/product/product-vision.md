@@ -1,4 +1,4 @@
-# Product Vision — Dekolife (سامانه دکوالیف)
+# Product Vision — Dekolife (سامانه دکولایف)
 
 | | |
 |---|---|

@@ -63,6 +63,10 @@ RUN apt-get update \
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 
+# Composer is copied in so `docker compose exec app composer …` works for developers and
+# the CI gates (validate, audit) can run inside the same image as the application.
+COPY --from=vendor /usr/bin/composer /usr/local/bin/composer
+
 WORKDIR /var/www/html
 
 COPY --from=vendor /app /var/www/html

@@ -22,6 +22,7 @@
              entries are ignored here while a developer's `.env` wins — which silently
              turns every HTTP test red with a missing `sessions` table. -->
         <server name="APP_ENV" value="testing"/>
+        <server name="APP_KEY" value="base64:oETmxEg0jmqQyvVJLsBANn7wVi3Q2AsIcKW7FYUPgsM="/>
         <server name="APP_MAINTENANCE_DRIVER" value="file"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="BROADCAST_CONNECTION" value="null"/>
