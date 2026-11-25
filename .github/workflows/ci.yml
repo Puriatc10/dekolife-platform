@@ -37,7 +37,20 @@ jobs:
       # is faster but proves a different stack than the one we ship, and a hostname
       # mismatch (mysql vs 127.0.0.1) would only surface after delivery.
       - name: Build application image
-        run: docker compose build app
+        # public.ecr.aws answers 429 under load from shared CI runners (seen once on main
+        # after a green PR). A base-image pull failure is infrastructure, not a code
+        # defect, so the build retries with backoff instead of failing the pipeline.
+        run: |
+          for attempt in 1 2 3; do
+            if docker compose build app; then
+              echo "image built on attempt ${attempt}"
+              exit 0
+            fi
+            echo "build attempt ${attempt} failed; retrying in $((attempt * 20))s"
+            sleep $((attempt * 20))
+          done
+          echo "image build failed after 3 attempts"
+          exit 1
 
       - name: Start MySQL and mail catcher
         run: docker compose up -d mysql mailpit
