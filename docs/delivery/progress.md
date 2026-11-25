@@ -96,6 +96,7 @@ Phase 0 exit criterion: first green run on `main` for the skeleton. Until then n
 | D-004 | v1 has one active gateway per payment; 12 drivers shipped behind admin activation | matches `docs/canonical-context.md` §5; split payment deferred as `RB-PAY-01` and raised as `AMB-PAY-001` for a written client decision | 2026-11-25 | Phase 4 |
 | D-005 | `v0.8.0` is skipped; Phase 8 ships as `v0.7.1` | avoids implying a feature set that does not exist | 2026-11-25 | release |
 | D-006 | Requirement baseline published as 227 clauses / 261 work items before any code | `ماده ۴` بند ۱ forbids reduction from the appendices; you cannot prove completeness without a count | 2026-11-25 | all |
+| D-007 | Product name is «دکولایف» (Latin: Dekolife), single source in `config('app.brand')` | owner-confirmed spelling (`AMB-CTR-011`); a brand name that drifts appears wrong on invoices and store listings | 2026-11-25 | all copy, invoices, legal notices |
 
 ---
 

@@ -13,7 +13,24 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Dekolife'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Brand names
+    |--------------------------------------------------------------------------
+    |
+    | The product's authoritative Persian name, fixed by the owner on
+    | 2026-11-25 (AMB-CTR-011). UI copy, invoices, PDF footers and legal
+    | notices read this value instead of repeating a literal string, so a
+    | rename is one edit rather than a find-and-replace across templates.
+    |
+    */
+
+    'brand' => [
+        'fa' => env('APP_BRAND_FA', 'دکولایف'),
+        'en' => env('APP_BRAND_EN', 'Dekolife'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
