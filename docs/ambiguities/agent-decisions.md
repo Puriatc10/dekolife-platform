@@ -281,6 +281,20 @@ Rules for the log:
 **How to change.** It does not change: the owner has fixed the name. A future rename would be a rebrand, not a correction.
 **Ruled on.** `AMB-CTR-011`.
 
+### DEC-036 — One-time codes go out through the same SMS adapter, mocked until a provider exists
+
+**Decision.** `OtpService` delivers codes through the existing `SmsDriver` contract. Until the client names a provider (`AMB-NTF-001`), the drivers are `log` (default: the message is written to the application log) and `fake` (tests: the message is held in memory). The plain code is returned to the browser **only** when `app.environment() === 'local'` *and* `app.debug` is on; in `testing` and `production` it is never echoed, and no route accepts a code from the query string.
+**Rationale.** Registration, recovery and the SMS-confirmed mobile change are P0 flows that must not wait for a commercial decision. A mocked adapter keeps the flow testable end to end and makes the eventual provider a one-class change; exposing the code behind an environment check — not behind a config flag any deploy can flip — keeps the demo path from becoming a production hole.
+**How to change.** Add the provider's driver to the match in `NotificationsServiceProvider` and set `SMS_DRIVER`; nothing else in the OTP flow changes.
+**Ruled on.** `AMB-NTF-001`.
+
+### DEC-037 — One-time-code policy: 300 s, three attempts, 60 s between codes
+
+**Decision.** A code lives 300 seconds, dies after three wrong attempts, cannot be re-sent to the same number within 60 seconds, and a number is capped at 10 codes per day. The values live in `config/sms.php` and are enforced by `OtpService`, not by controllers.
+**Rationale.** The contract asks for «ثبت‌نام با تأیید پیامک» and says nothing about expiry or attempts, so any number is a decision. Five minutes covers a slow network without leaving a wide window; three attempts blocks guessing (10⁶ space, 3 tries) while a 60-second resend gap keeps SMS cost per registration bounded. The limits are in one config block because the client will have an opinion about SMS cost and this is the knob they will want to turn.
+**How to change.** `SMS_OTP_TTL`, `SMS_OTP_MAX_ATTEMPTS` in `config/sms.php`; the acceptance criteria in this register follow the config, not the other way round.
+**Ruled on.** `REQ-IAM-001` (the contract clause is silent on the numbers).
+
 ## 8. Decision index
 
 | DEC | Subject | Label | Ambiguities closed | Reversal cost |
@@ -320,6 +334,8 @@ Rules for the log:
 | 033 | Proceed on draft text | AGENT_DECISION | `AMB-CTR-007` | Low |
 | 034 | Name standardisation | AGENT_DECISION | `AMB-CTR-011` | Low |
 | 035 | Heading-level penalty model | AGENT_DECISION | `AMB-CTR-008` | Low |
+| 036 | OTP through the SMS adapter, mocked until a provider exists | AGENT_DECISION | `AMB-NTF-001` | Low |
+| 037 | OTP policy: 300 s, 3 attempts, 60 s resend, 10/day | AGENT_DECISION | `REQ-IAM-001` | Low |
 
 ## 9. How to change a decision
 

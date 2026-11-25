@@ -2,7 +2,7 @@
 
 **Purpose:** The single living status record for the mission: current phase, requirement counts, open PRs, CI state, decisions and blockers. It is updated **after every cycle** (at minimum weekly, and at every phase gate) and is the source for the contractual weekly progress report (`ماده ۳`; `ماده ۴` بند ۱).
 **Audience:** Orchestrator, all agents, reviewer, delivery lead.
-**Status:** Live document — last updated **2026-11-25** (Phase 0 closed, Phase 1 foundation landed; cycle 1).
+**Status:** Live document — last updated **2026-11-25** (Phase 1 complete: OTP registration and recovery, SMS-confirmed profile edit, store/supplier approval, national-id duplicate detection, Sanctum tokens; cycle 3).
 **Source:** Phase plan and durations from `phases-and-milestones.md`; requirement baseline enumerated from contract appendices 1–13 and articles 1–16 (`docs/contract/contract-extracted-text.txt`).
 
 > **Update discipline.** Every cycle appends a row to §7, refreshes §2–§5 in place, and never rewrites history: superseded numbers are struck through or moved into §7 with a reason. A cycle with no code merged but with review activity is still a cycle and must be logged.
@@ -171,6 +171,24 @@ Phase 0 exit criterion: first green run on `main` for the skeleton. Until then n
 - **Gates:** `Pint` 65 files PASS, `PHPStan` L6 no errors, `Pest` 41 passed.
 - **Decisions made:** TOTP implemented in-house rather than adding a package (40 lines, RFC-vector-testable); the admin guard configured (`auth:admin`) even though the first admin routes authenticate through `web`, so panel isolation can be tightened without a route rewrite; permissions seeded one-per-capability from the permissions matrix so a policy can be traced back to a contract clause.
 - **Next cycle:** finish Phase 1 (mobile OTP + reset, profile approval, Sanctum tokens) and start Phase 2 (Merchants, Catalog, Pricing, Inventory).
+
+### Cycle 3 — 2026-11-25 (Phase 1 close-out, day 1) — OTP, SMS-confirmed profile, approvals, API tokens
+
+- **Delivered (code, tested):**
+  - **Mobile OTP as one service** (`OtpService`): a six-digit code stored only as a hash (`iam_otp_codes`), five-minute TTL, three attempts, one code per mobile per minute and ten per day, Persian/Arabic digits normalised, and the code bound to the mobile rather than to the session. The purpose (`register`, `reset_password`, `mobile_change`, `api_login`) and an optional payload are stored with the code, so verification and effect are one step and a client cannot swap the target number between them.
+  - **Registration** (REQ-IAM-001): mobile → code → account, three separate routes; a duplicate mobile is refused *before* an SMS is spent, and the account is created with the `consumer` role only after the code verifies.
+  - **Password recovery** (REQ-IAM-003): unknown and known numbers answer identically, so the form is not an enumeration oracle; a successful reset clears `must_change_password` and drops the user's other database sessions.
+  - **SMS-confirmed profile edit** (پیوست ۲ بند ۸ «ویرایش اطلاعات کاربری»): name/email/national id can be edited directly; a **mobile change** sends a code to the *new* number and only applies after it is confirmed — the number that is verified is the one carried in the code's payload, not one supplied by the client.
+  - **Store/supplier approval** (پیوست ۳ ۳-۱/۳-۴, پیوست ۶ بند ۱۰): `mer_merchant_profiles` with `pending | approved | rejected`; the applicant never grants itself a role — approval by an admin is the only path that does, and rejection keeps the reason visible to the applicant, who may resubmit (same row, back to `pending`).
+  - **National-id duplicate detection** (پیوست ۵ بند ۳): `NationalId` validates the Iranian checksum, and `usr_national_ids` holds a keyed HMAC (unique) plus an encrypted copy. Uniqueness is enforced by the index, not by read-then-write, so two racing registrations cannot both succeed; the duplicate message shows only a masked id.
+  - **Sanctum tokens** (`routes/api.php`, `/api/v1`): `POST auth/token` (mobile + password) and `POST auth/otp-token` (mobile + code) issue a 30-day, per-device token; `GET me` returns identity and the role/panel map so the mobile client does not hard-code panels; `POST auth/logout` revokes only the calling token.
+  - **Admin review screen** at `/admin/merchants` behind 2FA, with pending/approved/rejected counts and approve/reject actions.
+  - **Preview gallery** extended to 15 pages (register, forgot password, profile, merchant application and form, admin review) so every new screen is visible per phase.
+- **Requirement coverage in this slice:** REQ-IAM-001 (mobile OTP half — Phase 1 now complete), REQ-IAM-003, the profile-edit clause of پیوست ۲ بند ۸, the approval rule of پیوست ۶ بند ۱۰, REQ-MER-005 (national-id half; postal-code and mobile search follow in Phase 2), and the API obligation of پیوست ۱ for the mobile app.
+- **Tests:** **62 passed / 216 assertions** (was 41). New: registration happy path + duplicate + Persian digits, three-attempt burn, 60-second resend throttle, reset flow and its non-enumerable answer, mobile change gated by the code, duplicate mobile refusal, national-id duplicate/invalid checksum, merchant submit→approve→role→panel, rejection reason, resubmission idempotency, token issue/otp-token/401/logout revocation.
+- **Gates:** `Pint` 92 files PASS, `PHPStan` L6 no errors, `Pest` 62 passed, `preview:capture` 15/15 pages 200.
+- **Decisions made:** OTP delivery uses the `log`/`fake` driver until the client picks a provider (DEC-036) — the code is returned to the browser *only* in `local` with `app.debug` on, which is the demo path, and never in testing or production. `users.email` became nullable (a customer registers with a mobile, not an email). Approval grants the role but does not switch the active role, so the store panel opens on the next role switch — consistent with the one-active-role rule rather than silently overriding it.
+- **Next cycle:** Phase 2 — Merchants (marketer visit form, images/geo, QR attribution), Catalog, Pricing, Inventory.
 
 ---
 

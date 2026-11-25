@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Modules\Identity\Http\Controllers\Account\ProfileController;
 use App\Modules\Identity\Http\Controllers\Auth\LoginController;
 use App\Modules\Identity\Http\Controllers\Auth\PasswordController;
+use App\Modules\Identity\Http\Controllers\Auth\PasswordResetController;
+use App\Modules\Identity\Http\Controllers\Auth\RegisterController;
 use App\Modules\Identity\Http\Controllers\PanelController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +23,30 @@ Route::middleware(['web', 'guest'])->group(function (): void {
     Route::post('login', [LoginController::class, 'store'])
         ->middleware('throttle:10,1')
         ->name('login.store');
+
+    // Registration: mobile -> code -> account (REQ-IAM-001). The mobile lives in the
+    // session between steps, so a bookmarked verify URL without a session goes back to step 1.
+    Route::get('register', [RegisterController::class, 'show'])->name('register');
+    Route::post('register', [RegisterController::class, 'requestCode'])
+        ->middleware('throttle:6,1')
+        ->name('register.request');
+    Route::get('register/verify', [RegisterController::class, 'showVerify'])->name('register.verify');
+    Route::post('register/verify', [RegisterController::class, 'verify'])
+        ->middleware('throttle:10,1')
+        ->name('register.verify.store');
+    Route::post('register/resend', [RegisterController::class, 'resend'])
+        ->middleware('throttle:3,1')
+        ->name('register.resend');
+
+    // Password recovery by SMS code (REQ-IAM-003).
+    Route::get('password/forgot', [PasswordResetController::class, 'showRequest'])->name('password.request');
+    Route::post('password/forgot', [PasswordResetController::class, 'requestCode'])
+        ->middleware('throttle:6,1')
+        ->name('password.request.store');
+    Route::get('password/forgot/verify', [PasswordResetController::class, 'showVerify'])->name('password.reset.verify');
+    Route::post('password/forgot/verify', [PasswordResetController::class, 'reset'])
+        ->middleware('throttle:10,1')
+        ->name('password.reset.store');
 });
 
 Route::middleware(['web', 'auth'])->group(function (): void {
@@ -27,6 +54,16 @@ Route::middleware(['web', 'auth'])->group(function (): void {
 
     Route::get('password/change', [PasswordController::class, 'edit'])->name('password.change');
     Route::post('password/change', [PasswordController::class, 'update'])->name('password.update');
+
+    // Profile editing; a mobile change needs its own code sent to the new number (REQ-IAM-004).
+    Route::get('account/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('account/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('account/profile/mobile', [ProfileController::class, 'requestMobileChange'])
+        ->middleware('throttle:5,1')
+        ->name('profile.mobile.request');
+    Route::post('account/profile/mobile/confirm', [ProfileController::class, 'confirmMobileChange'])
+        ->middleware('throttle:10,1')
+        ->name('profile.mobile.confirm');
 });
 
 Route::middleware(['web', 'auth', 'password.changed'])->group(function (): void {
