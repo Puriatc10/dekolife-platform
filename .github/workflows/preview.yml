@@ -1,0 +1,136 @@
+name: Preview (all panels)
+
+# Publishes a static snapshot of every panel after each change to main, so the state of the
+# product is browsable per phase instead of being described in a report. The snapshot is
+# rendered by the application itself (`php artisan preview:capture`), with seeded demo data
+# and the current code — no external hosting, no credentials, no real customer data.
+
+on:
+  push:
+    branches: [main]
+  # A pull request produces the same snapshot as an artifact, so a reviewer can look at the
+  # panels before the change reaches main; only main publishes to Pages.
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: preview-pages
+  cancel-in-progress: true
+
+env:
+  COMPOSE_FILE: compose.yaml:compose.ci.yaml
+  # Docker Hub on CI runners; public.ecr.aws locally (Hub is blocked on the dev host).
+  PHP_IMAGE: php:8.4-fpm
+  NODE_IMAGE: node:22-alpine
+  COMPOSER_IMAGE: composer:2
+  MYSQL_IMAGE: mysql:8.4
+
+jobs:
+  capture:
+    name: Render panels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build application image
+        run: |
+          for attempt in 1 2 3 4; do
+            if docker compose build app; then exit 0; fi
+            echo "build attempt ${attempt} failed; retrying"
+            sleep $((attempt * 30))
+          done
+          exit 1
+
+      - name: Start MySQL
+        run: docker compose up -d mysql
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 60); do
+            if docker compose exec -T mysql mysqladmin ping -h127.0.0.1 -uroot -proot --silent >/dev/null 2>&1; then
+              echo "MySQL ready"; exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs mysql; exit 1
+
+      - name: Capture every panel
+        run: |
+          mkdir -p storage/app/preview
+          LABEL="$(grep -m1 '^### Cycle' docs/delivery/progress.md | sed 's/^### //' || echo 'latest')"
+          echo "label: ${LABEL}"
+          docker compose run --rm --no-deps \
+            -v "$PWD/storage/app/preview:/var/www/html/storage/app/preview" \
+            app sh -c "cp .env.example .env \
+              && php artisan key:generate --force \
+              && php artisan migrate:fresh --seed --force \
+              && php artisan preview:capture --out=/var/www/html/storage/app/preview --label='${LABEL}'"
+
+      - name: Container log on failure
+        if: failure()
+        run: |
+          docker compose logs --tail=60 app || true
+          echo "=== captured gallery ==="
+          sed -n 's/.*<td class="\([a-z]*\)">\([0-9]*\)<\/td>.*/status: \1 \2/p' storage/app/preview/index.html || true
+
+      - name: Fail if any panel did not render
+        run: |
+          if grep -q 'class="bad"' storage/app/preview/index.html; then
+            echo "At least one panel returned a non-200 status:"; grep 'class="bad"' storage/app/preview/index.html; exit 1
+          fi
+          echo "all captured pages returned 200"
+          find storage/app/preview -name '*.html' | sort
+
+      - name: Summary
+        run: |
+          {
+            echo "### پیش‌نمایش پنل‌ها"
+            echo ""
+            echo "| پنل | مسیر | کد |"
+            echo "| --- | --- | --- |"
+            grep -oE '<tr><td>[^<]+</td><td><code>[^<]+</code></td><td class="[a-z]+">[0-9]+</td>' storage/app/preview/index.html \
+              | sed -E 's|<tr><td>([^<]+)</td><td><code>([^<]+)</code></td><td class="[a-z]+">([0-9]+)</td>| | \1 | `\2` | \3 | |' || true
+            echo ""
+            if [ "${{ vars.PAGES_ENABLED }}" = "true" ]; then
+              echo "Published to GitHub Pages."
+            else
+              echo "GitHub Pages is not enabled for this repository, so the snapshot is attached as the \`github-pages\` artifact of this run (download and open \`index.html\`)."
+              echo "To publish it: Settings → Pages → Build and deployment → Source: **GitHub Actions**, then set the repository variable \`PAGES_ENABLED=true\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # configure-pages fails hard when Pages is not enabled, which would turn every run
+      # red for a repository setting the code cannot change. It only runs once the owner
+      # has switched Pages on and set PAGES_ENABLED=true; the artifact is always uploaded,
+      # so the gallery is downloadable from the run page in the meantime.
+      - uses: actions/configure-pages@v5
+        id: pages
+        if: vars.PAGES_ENABLED == 'true'
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: storage/app/preview
+          name: panels-preview
+
+  deploy:
+    name: Publish
+    needs: capture
+    runs-on: ubuntu-latest
+    # The snapshot is always produced and attached as an artifact. Publishing needs Pages
+    # to be enabled once by the repository owner (Settings → Pages → Source: GitHub Actions);
+    # until then this job fails softly instead of turning every main build red.
+    continue-on-error: true
+    if: github.event_name != 'pull_request' && vars.PAGES_ENABLED == 'true'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
