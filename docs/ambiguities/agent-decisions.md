@@ -275,10 +275,10 @@ Rules for the log:
 **Ruled on.** `AMB-CTR-007`.
 
 ### DEC-034 — Standardise the product name as «دکولایف»
-**Decision.** Use «دکولایف» (the contract's first spelling, page 1) in code, docs, UI copy and metadata; note the variants «دکولایف» and «دکالیف» as known spellings from the source. The English label is "Dekolife".
-**Basis.** `AGENT_DECISION` — three spellings inside one document (`AMB-CTR-011`).
-**Rationale.** A brand name that appears three ways in the same contract will appear three ways in a store listing, an invoice footer and a legal notice; picking the first use is defensible and cheap to change.
-**How to change.** One config value plus a find/replace across locale files; owner confirmation closes it.
+**Decision.** Use «دکولایف» in code, docs, UI copy, metadata, invoices and legal notices. The English label is "Dekolife". **Owner-confirmed on 2026-11-25** — this is no longer an agent decision.
+**Basis.** `OWNER_DECISION` (`AMB-CTR-011`). Text extraction had produced a variant spelling; the extracted text was corrected to match the rendered page and the PDF itself was not touched.
+**Rationale.** A brand name that appears more than one way will appear more than one way in a store listing, an invoice footer and a legal notice; one authoritative spelling is required before any public artefact ships.
+**How to change.** It does not change: the owner has fixed the name. A future rename would be a rebrand, not a correction.
 **Ruled on.** `AMB-CTR-011`.
 
 ## 8. Decision index
