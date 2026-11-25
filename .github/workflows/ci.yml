@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "22"
+
+jobs:
+  backend:
+    name: Backend (Pint · PHPStan · Pest)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        # Same tag as compose.yaml; public ECR mirrors the official image.
+        image: public.ecr.aws/docker/library/mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: dekolife_test
+          MYSQL_USER: dekolife
+          MYSQL_PASSWORD: secret
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, bcmath, intl, zip, gd, exif, pcntl, mbstring, xml, ctype, json, openssl, tokenizer, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Composer validate
+        run: composer validate --strict --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Static analysis (PHPStan)
+        run: ./vendor/bin/phpstan analyse --no-progress --error-format=github
+
+      - name: Tests (Pest on MySQL)
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_DATABASE: dekolife_test
+          DB_USERNAME: dekolife
+          DB_PASSWORD: secret
+        run: php artisan test --colors=never
+
+      - name: Dependency audit
+        run: composer audit --no-interaction
+
+  frontend:
+    name: Frontend (lint · build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

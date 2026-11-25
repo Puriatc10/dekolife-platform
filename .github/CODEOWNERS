@@ -1,0 +1,10 @@
+# Default owners for everything in this repository.
+# Module-level ownership is declared in docs/delivery/dependency-map.md and expanded
+# as the implementation phases land.
+
+*                                   @Puriatc10
+
+/.github/                           @Puriatc10
+/docs/                              @Puriatc10
+/docker/                            @Puriatc10
+/app/Shared/                        @Puriatc10
