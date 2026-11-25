@@ -39,6 +39,8 @@ final class CapturePreviewCommand extends Command
             'email' => '',
             'paths' => [
                 ['label' => 'صفحهٔ ورود', 'uri' => '/login'],
+                ['label' => 'ثبت‌نام با موبایل', 'uri' => '/register'],
+                ['label' => 'بازیابی گذرواژه با پیامک', 'uri' => '/password/forgot'],
             ],
         ],
         [
@@ -48,6 +50,9 @@ final class CapturePreviewCommand extends Command
             'paths' => [
                 ['label' => 'پنل من', 'uri' => '/account'],
                 ['label' => 'انتخاب سطح', 'uri' => '/panel'],
+                ['label' => 'ویرایش پروفایل', 'uri' => '/account/profile'],
+                ['label' => 'درخواست فروشگاه/تأمین‌کننده', 'uri' => '/merchant/profiles'],
+                ['label' => 'فرم پروفایل فروشگاه', 'uri' => '/merchant/profiles/new?type=store'],
             ],
         ],
         [
@@ -81,6 +86,7 @@ final class CapturePreviewCommand extends Command
             'paths' => [
                 ['label' => 'چالش دومرحله‌ای', 'uri' => '/admin/2fa'],
                 ['label' => 'داشبورد مدیریت', 'uri' => '/admin', 'verified2fa' => true],
+                ['label' => 'بررسی پروفایل فروشگاه/تأمین‌کننده', 'uri' => '/admin/merchants', 'verified2fa' => true],
                 ['label' => 'تغییر اجباری گذرواژه', 'uri' => '/password/change', 'mustChange' => true],
             ],
         ],

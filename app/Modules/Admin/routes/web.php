@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Admin\Http\Controllers\DashboardController;
 use App\Modules\Admin\Http\Controllers\TwoFactorController;
+use App\Modules\Merchants\Http\Controllers\Admin\MerchantReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,5 +22,10 @@ Route::middleware(['web', 'auth'])
 
         Route::middleware(['active-role:admin', 'password.changed', 'admin.2fa'])->group(function (): void {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+            // Store/supplier profile review: the only place those roles are granted.
+            Route::get('merchants', [MerchantReviewController::class, 'index'])->name('merchants.index');
+            Route::post('merchants/{profile}/approve', [MerchantReviewController::class, 'approve'])->name('merchants.approve');
+            Route::post('merchants/{profile}/reject', [MerchantReviewController::class, 'reject'])->name('merchants.reject');
         });
     });

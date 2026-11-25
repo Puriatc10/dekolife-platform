@@ -1047,13 +1047,14 @@ Identity and access: registration, login, recovery, five user levels, secondary 
 
 - **Actors:** Visitor
 - **Statement:** A visitor registers with mobile number, name and password, and the account becomes active only after the SMS code is verified.
-- **Rules / edge cases:** Code validity 2 minutes, max 5 attempts, resend throttled; duplicate mobile rejected with a Persian message; unverified accounts expire.
+- **Rules / edge cases:** Policy is not fixed by the contract (see DEC-037): 300 s validity, 3 attempts, 60 s between codes for one number, 10 codes per number per day; duplicate mobile rejected with a Persian message; Persian/Arabic digits accepted.
 - **Priority:** P0 · **Depends on:** REQ-NTF-004
 - **Acceptance:**
   1. Registration without a valid code creates no active account
   2. Duplicate mobile number is refused with a clear message
   3. Expired code cannot be reused
-- **Label:** CONTRACT · **Status:** Specified
+- **Label:** CONTRACT · **Status:** Implemented
+- **Implementation:** `OtpService` + `iam_otp_codes`; `RegisterController` (mobile → code → account). Code stored as a hash, 300 s validity, 3 attempts, 60 s resend throttle, 10 codes per number per day — the contract does not state these values, so they are fixed by `DEC-037`.
 
 ### REQ-IAM-002 — Login with mobile number and password
 
@@ -1085,7 +1086,8 @@ Identity and access: registration, login, recovery, five user levels, secondary 
   1. Reset completes only with a valid code
   2. Old password stops working immediately
   3. Reset event is written to the audit log
-- **Label:** CONTRACT · **Status:** Specified
+- **Label:** CONTRACT · **Status:** Implemented
+- **Implementation:** `PasswordResetController`; unknown and known numbers answer identically, reset clears `must_change_password` and destroys the user's other database sessions; `identity.password.reset` is audited.
 
 ### REQ-IAM-004 — Five independent user levels with separated permissions
 
@@ -1564,7 +1566,8 @@ Merchant and supplier lifecycle: field onboarding, store data, attribution, acti
   1. Searching any of the three identifiers returns matching stores
   2. Saving a store with an existing national ID is refused
   3. Admin override writes an audit entry
-- **Label:** CONTRACT · **Status:** Specified
+- **Label:** CONTRACT · **Status:** In progress
+- **Implementation:** national-id half is done — `NationalId` checksum validation, `usr_national_ids` with a unique keyed hash (race-safe) and a masked duplicate message, enforced on both consumer profiles and store/supplier applications. Postal-code and mobile search plus the admin override with a reason are Phase 2 (marketer visit form).
 
 ### REQ-MER-006 — Personal QR code per marketer with automatic attribution on scan
 

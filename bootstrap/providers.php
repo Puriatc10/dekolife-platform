@@ -2,6 +2,7 @@
 
 use App\Modules\Admin\Providers\AdminServiceProvider;
 use App\Modules\Identity\Providers\IdentityServiceProvider;
+use App\Modules\Merchants\Providers\MerchantsServiceProvider;
 use App\Modules\Notifications\Providers\NotificationsServiceProvider;
 use App\Modules\Users\Providers\UsersServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -14,5 +15,6 @@ return [
     NotificationsServiceProvider::class,
     UsersServiceProvider::class,
     IdentityServiceProvider::class,
+    MerchantsServiceProvider::class,
     AdminServiceProvider::class,
 ];

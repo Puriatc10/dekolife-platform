@@ -13,5 +13,6 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $this->loadModuleMigrations();
         $this->loadModuleViews();
         $this->loadWebRoutes();
+        $this->loadApiRoutes();
     }
 }
