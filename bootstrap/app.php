@@ -1,5 +1,8 @@
 <?php
 
+use App\Modules\Admin\Http\Middleware\EnsureAdminTwoFactor;
+use App\Modules\Identity\Http\Middleware\EnsureActiveRole;
+use App\Modules\Identity\Http\Middleware\EnsurePasswordIsChanged;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'active-role' => EnsureActiveRole::class,
+            'admin.2fa' => EnsureAdminTwoFactor::class,
+            'password.changed' => EnsurePasswordIsChanged::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

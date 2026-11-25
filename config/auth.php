@@ -42,6 +42,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // The admin panel authenticates through its own guard (پیوست ۱ بند ۷): an ordinary
+        // storefront session never satisfies `auth:admin`, so a compromised customer
+        // session cannot be replayed against /admin.
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

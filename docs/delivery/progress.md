@@ -154,6 +154,24 @@ Phase 0 exit criterion: first green run on `main` for the skeleton. Until then n
   - `AMB-CTR-005`/`AMB-CTR-006` — pages 1–4 carry **two stacked text layers** and only one renders. The rendered payment plan is a single row «پرداخت مرحلهای | ۹۰٬۰۰۰٬۰۰۰ | در طول اجرا و پس از تحویل نهایی و تأیید کتبی»; the ۱۰٬۰۰۰٬۰۰۰ + ۸۰٬۰۰۰٬۰۰۰ split exists only in the non-rendering layer. The rendered support clause reads «از تاریخ تحویل نهایی تا پایان شرکت طرفین»; «به مدت ۵ سال» is likewise the non-rendering layer. Both readings are modelled as data, neither is quoted as settled until the owner confirms which revision was signed.
 - **Next cycle:** Phase 1 — module skeleton and autoloading for the six Phase-1 streams, identity/RBAC with negative authorization tests, and the first PR reviewed by an independent reviewer.
 
+### Cycle 2 — 2026-11-25 (Phase 1, day 1) — Identity, roles, authorization, 2FA, audit
+
+- **Phase 1 delivered (code, tested):**
+  - **Module skeleton**: `App\Shared\Modules\ModuleServiceProvider` — a module owns its routes, migrations and views and cannot forget to load them; four modules registered (`Identity`, `Users`, `Notifications`, `Admin`).
+  - **Roles as data, not a column**: `iam_roles`, `iam_permissions`, `iam_permission_role`, `iam_user_roles` (grant/revoke, `granted_by_id`, `revoked_at`) with the five levels of پیوست ۳. A user holds a set of roles and exactly **one active per session** (`HasRoles::activeRole()`), which is what makes the secondary level of پیوست ۷ بند ۶ coherent without merging price scopes (AMB-IAM-001, ADR-0007).
+  - **Authorization, enforced server-side**: `active-role:store` middleware checks both the active role *and* that the requested panel belongs to it, so `/store` cannot be opened while the marketer role is active; permissions resolve from the **active role only, never the union**.
+  - **Admin second factor** (پیوست ۱ بند ۷): TOTP (RFC 6238, SHA-1/6 digits/30 s) implemented in `App\Shared\Security\Totp` — no dependency, proven against the RFC's own test vectors — with enrolment on first visit, a challenge route, a session flag cleared by a fresh login, and `audit` on enrol/verify/fail.
+  - **Authentication** (REQ-IAM-001 for internal accounts): login with per-email+IP rate limiting, session regeneration, `last_login_at/ip`, audited success **and** failure, logout that invalidates the session.
+  - **Forced first-login password change** (پیوست ۶ بند ۸): `password.changed` middleware blocks every panel until the temporary password is replaced.
+  - **Audit trail** (پیوست ۱ بند ۱۰): append-only `adm_audit_logs` with a hash chain (`previous_hash` → `hash`), written for login, failed login, logout, password change, role switch, 2FA enrol/verify/fail.
+  - **SMS as an adapter** (AMB-NTF-001): `SmsDriver` contract with `log` (default, degrades safely) and `fake` (tests) drivers; no provider hard-coded.
+  - **Seeders**: roles/permissions matrix + five demo accounts (`admin@`, `store@`, `supplier@`, `marketer@`, `consumer@dekolife.test`), all with `must_change_password`.
+- **Requirement coverage in this slice:** REQ-IAM-001 (password login half; mobile OTP is the next slice), REQ-IAM-005, the admin-2FA obligation of پیوست ۱ بند ۷, the forced-change rule of پیوست ۶ بند ۸, and the audit obligations of پیوست ۱ بند ۱۰. Still open inside Phase 1: mobile-OTP registration and reset, SMS-confirmed profile edit, Sanctum token issuance, approval workflow for store/supplier profiles, national-id duplicate detection.
+- **Tests:** **41 passed / 105 assertions** (was 14). New coverage: 5 RFC TOTP vectors, panel isolation per active role, permission union refusal, switcher escalation refusal, admin 2FA challenge (wrong/valid/fresh-session), login success/failure audit, forced password change, logout.
+- **Gates:** `Pint` 65 files PASS, `PHPStan` L6 no errors, `Pest` 41 passed.
+- **Decisions made:** TOTP implemented in-house rather than adding a package (40 lines, RFC-vector-testable); the admin guard configured (`auth:admin`) even though the first admin routes authenticate through `web`, so panel isolation can be tightened without a route rewrite; permissions seeded one-per-capability from the permissions matrix so a policy can be traced back to a contract clause.
+- **Next cycle:** finish Phase 1 (mobile OTP + reset, profile approval, Sanctum tokens) and start Phase 2 (Merchants, Catalog, Pricing, Inventory).
+
 ---
 
 ## 8. Reporting template for the next cycle
