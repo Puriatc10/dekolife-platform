@@ -13,15 +13,15 @@
 
 | Field | Value |
 |---|---|
-| Current phase | **Phase 0 — baseline, repo, CI, shared contracts** |
+| Current phase | **Phase 0 complete — documentation baseline published; Phase 1 foundation landed** |
 | Phase start | 2026-11-25 |
-| Phase elapsed | 0 of 4 planned working days |
+| Phase elapsed | 1 of 4 planned working days |
 | Overall status | **On plan for the phase; 17 calendar days over the contract window at completion (see §6)** |
-| Next gate | M0 kickoff & baseline (planned day 7) |
+| Next gate | M0 kickoff & baseline (planned day 7) — docs ready for review |
 | Contract window | 90 calendar days from contract date + receipt of complete content (`ماده ۳`) |
 | Projected completion | 107 calendar days after kickoff → **+17 days vs contract** |
 | Extension request (M1 mitigation) | **not yet filed** — due by day 14, owner: delivery lead |
-| Active engineering streams | 0 of 6 (Phase 0 runs platform + docs only) |
+| Active engineering streams | 0 of 6 functional streams (platform + documentation only) |
 
 ---
 
@@ -31,7 +31,7 @@ Baseline enumerated at Phase 0: **203 numbered clauses across appendices 1–13*
 
 | Status | Count | Notes |
 |---|---|---|
-| Recorded in the requirement register | 0 | register publication is a Phase 0 exit criterion |
+| Recorded in the requirement register | 390 | `docs/requirements/functional-requirements.md` — 390 unique `REQ-*` ids across 29 areas, every one traced to a clause in `docs/contract/contract-requirements-matrix.md` |
 | `Implemented` | 0 | no functional code yet |
 | `Specified` (clean, no ambiguity) | 0 | classification starts with the register |
 | `Ambiguous` (`AMB-*` open) | 0 | three are known in advance, see §6 B-02 |
@@ -73,7 +73,14 @@ Empty at Phase 0 start. Every merged PR is appended to §7 with its tag.
 
 | Workflow | Trigger | Last run | Result |
 |---|---|---|---|
-| `ci.yml` — Pint, PHPStan L6, `php artisan test` (MySQL 8.4), `npm ci && npm run build`, secret scan | push + PR to `main` | not yet created | — |
+| `ci.yml` — Pint, PHPStan L6, `php artisan test` (MySQL 8.4), `composer audit`, `npm ci && npm run build`, gitleaks | push + PR to `main` | `610df85` (run 45633663465) | **green**: Pint 31 files, PHPStan no errors, Pest **14 passed (26 assertions)** on MySQL 8.4, frontend build ok, secret scan ok |
+
+Two failures were found and fixed before the first green run, both worth remembering:
+
+1. **The tests job failed because the gate ran on the bare runner** while `phpunit.xml` pinned `DB_HOST=mysql`. CI now runs every gate inside the built image with `compose.ci.yaml`, so the hostname, MySQL version and PHP extensions are the ones that ship.
+2. **PHPUnit `<env>` entries do not reach Laravel's Dotenv repository** in this stack — only `<server>` does. With `<env>`, a developer `.env` won the `SESSION_DRIVER=database` setting and every HTTP test failed on a missing `sessions` table while the suite looked green in isolation.
+
+The secret scan also flagged two documentation examples as `generic-api-key` (ULID idempotency keys); `.gitleaks.toml` allowlists that ULID shape only — no path-level exclusion, so a real credential in `docs/` still fails the build.
 
 Phase 0 exit criterion: first green run on `main` for the skeleton. Until then no PR can satisfy DoD point 5.
 
@@ -121,6 +128,24 @@ Phase 0 exit criterion: first green run on `main` for the skeleton. Until then n
 - **Variance:** none (day 0).
 - **Escalations:** B-01, B-02, B-03, B-04 opened; extension request drafted but not filed.
 - **Next cycle:** scaffold repo (`compose.yaml`, CI, module autoloading), publish ADR-0001…0007, publish the requirement register, first green CI run.
+
+### Cycle 1 — 2026-11-25 (Phase 0 close-out, day 1)
+
+- **Completed:**
+  - Repository `puriatc10/dekolife-platform` (private) with `main`, PR template, CODEOWNERS, `SECURITY.md`, `CONTRIBUTING.md`, `docs/engineering-rules.md`.
+  - Laravel 13.17 / PHP 8.4 skeleton installed container-first (the host has no PHP); Livewire 4.4, Sanctum 4.5, Larastan 3.15, Pest 4.7, Jalali 3.5 pinned in `composer.lock`.
+  - Docker stack: `compose.yaml` (app, queue, nginx, mysql 8.4, mailpit), multi-stage `docker/php/Dockerfile`, nginx vhost; Docker Official Images resolved through the public ECR mirror because Docker Hub is blocked on the development host.
+  - CI in three jobs, all green on `610df85` (see §4): backend gates **inside the built image**, frontend build, secret scan.
+  - Shared kernel: `App\Shared\Money` (integer Toman, half-up percentages, no floats) with 10 unit tests; `/health` endpoint with a database probe and 2 feature tests. **14 tests / 26 assertions** green locally and in CI.
+  - Documentation baseline published: 70 files (69 markdown + the extracted contract text), **29,948 lines** — contract summary and source provenance, **requirement register with 390 `REQ-*` ids across 29 areas** with all 211 clauses mapped, ambiguity register (**81 topics / 88 ids**: 60 decided, 16 escalated, 5 open, 35 logged decisions), 8 ADRs, architecture (28 module boundaries, layer rules, data flows), data model/ERD/data dictionary (194 entities, 85 tables, 1,993-line dictionary), API inventory (521 endpoints), UX sitemap (325 routes), 267-screen inventory, security (threat model, PII, checklist), testing (169 test cases) and delivery/operations runbooks. Zero broken internal links (checked programmatically).
+- **Merged PRs:** the documentation baseline and the platform foundation entered `main` as two commits while branch protection was still being configured; the first PR through the full flow is #1 (`docs/phase-0-baseline-status`).
+- **CI:** green on `610df85` — Pint 31 files, PHPStan L6 no errors, Pest 14 passed, frontend build ok, gitleaks ok.
+- **Burn-down:** 0 of 334 person-days of functional work complete (documentation and platform do not burn the functional budget); elapsed 1 of 76 working days.
+- **Variance:** none against the Phase 0 plan. The contract-window gap remains +17 days (`B-04`).
+- **Escalations:** unchanged (B-01…B-04 open). Two findings from the contract analysis that change how every commercial figure must be quoted:
+  - `AMB-CTR-007` — the PDF is an **unsigned draft** («پیشنویس نسخه ۱ — در انتظار توافق و امضای طرفین», blank signature dates and ID fields).
+  - `AMB-CTR-005`/`AMB-CTR-006` — pages 1–4 carry **two stacked text layers** and only one renders. The rendered payment plan is a single row «پرداخت مرحلهای | ۹۰٬۰۰۰٬۰۰۰ | در طول اجرا و پس از تحویل نهایی و تأیید کتبی»; the ۱۰٬۰۰۰٬۰۰۰ + ۸۰٬۰۰۰٬۰۰۰ split exists only in the non-rendering layer. The rendered support clause reads «از تاریخ تحویل نهایی تا پایان شرکت طرفین»; «به مدت ۵ سال» is likewise the non-rendering layer. Both readings are modelled as data, neither is quoted as settled until the owner confirms which revision was signed.
+- **Next cycle:** Phase 1 — module skeleton and autoloading for the six Phase-1 streams, identity/RBAC with negative authorization tests, and the first PR reviewed by an independent reviewer.
 
 ---
 
