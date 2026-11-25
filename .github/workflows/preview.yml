@@ -65,6 +65,10 @@ jobs:
             -v "$PWD/storage/app/preview:/var/www/html/storage/app/preview" \
             app sh -c "cp .env.example .env && php artisan migrate:fresh --seed --force && php artisan preview:capture --out=/var/www/html/storage/app/preview --label='${LABEL}'"
 
+      - name: Container log on failure
+        if: failure()
+        run: docker compose logs --tail=60 app || true
+
       - name: Fail if any panel did not render
         run: |
           if grep -q 'class="bad"' storage/app/preview/index.html; then
