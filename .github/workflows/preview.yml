@@ -101,14 +101,18 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # configure-pages fails hard when Pages is not enabled, which would turn every run
+      # red for a repository setting the code cannot change. It only runs once the owner
+      # has switched Pages on and set PAGES_ENABLED=true; the artifact is always uploaded,
+      # so the gallery is downloadable from the run page in the meantime.
       - uses: actions/configure-pages@v5
         id: pages
-        with:
-          enablement: false
+        if: vars.PAGES_ENABLED == 'true'
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: storage/app/preview
+          name: panels-preview
 
   deploy:
     name: Publish
