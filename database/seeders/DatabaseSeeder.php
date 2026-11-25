@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Modules\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Modules\Identity\Domain\RoleCode;
+use App\Modules\Identity\Seeders\RolePermissionSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

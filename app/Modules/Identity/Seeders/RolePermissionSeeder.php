@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Identity\Database\Seeders;
+namespace App\Modules\Identity\Seeders;
 
 use App\Modules\Identity\Domain\Models\Permission;
 use App\Modules\Identity\Domain\Models\Role;

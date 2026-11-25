@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use App\Modules\Identity\Database\Seeders\RolePermissionSeeder;
 use App\Modules\Identity\Domain\RoleCode;
+use App\Modules\Identity\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
