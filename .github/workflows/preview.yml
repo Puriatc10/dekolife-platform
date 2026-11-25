@@ -24,6 +24,11 @@ concurrency:
 
 env:
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
+  # Docker Hub on CI runners; public.ecr.aws locally (Hub is blocked on the dev host).
+  PHP_IMAGE: php:8.4-fpm
+  NODE_IMAGE: node:22-alpine
+  COMPOSER_IMAGE: composer:2
+  MYSQL_IMAGE: mysql:8.4
 
 jobs:
   capture:
@@ -36,10 +41,10 @@ jobs:
 
       - name: Build application image
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4; do
             if docker compose build app; then exit 0; fi
             echo "build attempt ${attempt} failed; retrying"
-            sleep $((attempt * 20))
+            sleep $((attempt * 30))
           done
           exit 1
 

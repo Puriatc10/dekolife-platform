@@ -15,6 +15,16 @@ env:
   NODE_VERSION: "22"
   # Every `docker compose` call in this workflow uses the CI overlay (no bind mounts).
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
+  # Docker Official Images come from Docker Hub on GitHub runners. Locally the same
+  # compose file defaults to public.ecr.aws, because Docker Hub is blocked on the
+  # development host — but public.ecr.aws rate-limits shared CI IPs (429 on manifests,
+  # repeatedly), while the runner's Hub quota is the standard path in CI.
+  PHP_IMAGE: php:8.4-fpm
+  NODE_IMAGE: node:22-alpine
+  COMPOSER_IMAGE: composer:2
+  MYSQL_IMAGE: mysql:8.4
+  NGINX_IMAGE: nginx:alpine
+  MAILPIT_IMAGE: ghcr.io/axllent/mailpit:latest
 
 # Least privilege, but explicit: the gitleaks action calls the pull-request API to learn
 # the PR base/head SHAs. Without `pull-requests: read` the default token answers
@@ -41,15 +51,15 @@ jobs:
         # after a green PR). A base-image pull failure is infrastructure, not a code
         # defect, so the build retries with backoff instead of failing the pipeline.
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4; do
             if docker compose build app; then
               echo "image built on attempt ${attempt}"
               exit 0
             fi
-            echo "build attempt ${attempt} failed; retrying in $((attempt * 20))s"
-            sleep $((attempt * 20))
+            echo "build attempt ${attempt} failed; retrying"
+            sleep $((attempt * 30))
           done
-          echo "image build failed after 3 attempts"
+          echo "image build failed after 4 attempts"
           exit 1
 
       - name: Start MySQL and mail catcher
