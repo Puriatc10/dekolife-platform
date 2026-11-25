@@ -65,6 +65,7 @@ not the reverse.
 | [`api/API-guidelines.md`](api/API-guidelines.md) | Versioning, pagination, errors, auth. |
 | [`api/endpoint-inventory.md`](api/endpoint-inventory.md) | Endpoint list by module and role. |
 | [`api/error-model.md`](api/error-model.md) | Error codes and HTTP mapping. |
+| [`api/deprecations.md`](api/deprecations.md) | API deprecation policy and sunset headers. |
 
 ## UX
 
