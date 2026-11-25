@@ -2,7 +2,7 @@
 
 **Purpose:** The single living status record for the mission: current phase, requirement counts, open PRs, CI state, decisions and blockers. It is updated **after every cycle** (at minimum weekly, and at every phase gate) and is the source for the contractual weekly progress report (`ماده ۳`; `ماده ۴` بند ۱).
 **Audience:** Orchestrator, all agents, reviewer, delivery lead.
-**Status:** Live document — last updated **2026-11-25** (Phase 0, cycle 0).
+**Status:** Live document — last updated **2026-11-25** (Phase 0 closed, Phase 1 foundation landed; cycle 1).
 **Source:** Phase plan and durations from `phases-and-milestones.md`; requirement baseline enumerated from contract appendices 1–13 and articles 1–16 (`docs/contract/contract-extracted-text.txt`).
 
 > **Update discipline.** Every cycle appends a row to §7, refreshes §2–§5 in place, and never rewrites history: superseded numbers are struck through or moved into §7 with a reason. A cycle with no code merged but with review activity is still a cycle and must be logged.
@@ -27,16 +27,22 @@
 
 ## 2. Requirement counts
 
-Baseline enumerated at Phase 0: **203 numbered clauses across appendices 1–13** (`پیوست ۱` 10, `پیوست ۲` 12, `پیوست ۳` 28 across the five role groups, `پیوست ۴` 24, `پیوست ۵` 44, `پیوست ۶` 12, `پیوست ۷` 10, `پیوست ۸` 8, `پیوست ۹` 6, `پیوست ۱۰` 6, `پیوست ۱۱` 20, `پیوست ۱۲` 16, `پیوست ۱۳` 7) plus **24 contract-level (CTR) obligations** from the 16 articles = **227 baseline items**.
+Baseline enumerated at Phase 0: **203 numbered clauses across appendices 1–13** (`پیوست ۱` 10, `پیوست ۲` 12, `پیوست ۳` 28 across the five role groups, `پیوست ۴` 24, `پیوست ۵` 44, `پیوست ۶` 12, `پیوست ۷` 10, `پیوست ۸` 8, `پیوست ۹` 6, `پیوست ۱۰` 6, `پیوست ۱۱` 20, `پیوست ۱۲` 16, `پیوست ۱۳` 7) plus **24 contract-level (CTR) obligations** from the 16 articles = **227 baseline items**. The published register splits those into **390 requirements** and the phase plan tracks **261 work items**; the three numbers measure different things and are stated side by side so a later re-baseline is never read as scope growth:
+
+| Unit | Count | Where it comes from |
+|---|---|---|
+| Contract clauses | 227 | 203 appendix clauses + 24 article-level obligations |
+| Requirements (`REQ-*`) | 390 | compound clauses split into testable requirements; all 211 matrix rows mapped |
+| Phase work items | 261 | a requirement that must be verified in two phases is counted in both |
 
 | Status | Count | Notes |
 |---|---|---|
 | Recorded in the requirement register | 390 | `docs/requirements/functional-requirements.md` — 390 unique `REQ-*` ids across 29 areas, every one traced to a clause in `docs/contract/contract-requirements-matrix.md` |
 | `Implemented` | 0 | no functional code yet |
-| `Specified` (clean, no ambiguity) | 0 | classification starts with the register |
-| `Ambiguous` (`AMB-*` open) | 0 | three are known in advance, see §6 B-02 |
-| `Deferred` (`RB-*` with annex) | 1 | `RB-MOB-01` native Android/iOS apps, out of scope per `docs/canonical-context.md` §0 |
-| **Remaining to implement** | **227** | all areas |
+| `Specified` (clean, no ambiguity) | 374 | classification from the matrix coverage table |
+| `Ambiguous` (`AMB-*` open) | 8 | plus 2 `Conflicting`; the highest-risk ones are in §6 B-02 |
+| `Deferred` (`RB-*` with annex) | 6 | `RB-MOB-01` native Android/iOS apps (پیوست ۸) and post-warranty annual support, per `docs/canonical-context.md` §0 |
+| **Remaining to implement** | **390** | all areas (`Specified` + `Ambiguous` + `Conflicting` after subtracting `Implemented`) |
 
 **By phase allocation** (target counts, reconciled when the register publishes):
 
@@ -134,11 +140,11 @@ Phase 0 exit criterion: first green run on `main` for the skeleton. Until then n
 
 - **Completed:**
   - Repository `puriatc10/dekolife-platform` (private) with `main`, PR template, CODEOWNERS, `SECURITY.md`, `CONTRIBUTING.md`, `docs/engineering-rules.md`.
-  - Laravel 13.17 / PHP 8.4 skeleton installed container-first (the host has no PHP); Livewire 4.4, Sanctum 4.5, Larastan 3.15, Pest 4.7, Jalali 3.5 pinned in `composer.lock`.
+  - Laravel **13.44.1** / PHP 8.4 skeleton installed container-first (the host has no PHP); Livewire 4.4, Sanctum 4.5, Larastan 3.15, Pest 4.7, Jalali 3.5 pinned in `composer.lock`.
   - Docker stack: `compose.yaml` (app, queue, nginx, mysql 8.4, mailpit), multi-stage `docker/php/Dockerfile`, nginx vhost; Docker Official Images resolved through the public ECR mirror because Docker Hub is blocked on the development host.
   - CI in three jobs, all green on `610df85` (see §4): backend gates **inside the built image**, frontend build, secret scan.
   - Shared kernel: `App\Shared\Money` (integer Toman, half-up percentages, no floats) with 10 unit tests; `/health` endpoint with a database probe and 2 feature tests. **14 tests / 26 assertions** green locally and in CI.
-  - Documentation baseline published: 70 files (69 markdown + the extracted contract text), **29,948 lines** — contract summary and source provenance, **requirement register with 390 `REQ-*` ids across 29 areas** with all 211 clauses mapped, ambiguity register (**81 topics / 88 ids**: 60 decided, 16 escalated, 5 open, 35 logged decisions), 8 ADRs, architecture (28 module boundaries, layer rules, data flows), data model/ERD/data dictionary (194 entities, 85 tables, 1,993-line dictionary), API inventory (521 endpoints), UX sitemap (325 routes), 267-screen inventory, security (threat model, PII, checklist), testing (169 test cases) and delivery/operations runbooks. Zero broken internal links (checked programmatically).
+  - Documentation baseline published: 70 files (69 markdown + the extracted contract text), **29,948 lines** — contract summary and source provenance, **requirement register with 390 `REQ-*` ids across 29 areas** with all 211 clauses mapped, ambiguity register (**81 topics / 88 ids**: 60 decided, 16 escalated, 5 open, 35 logged decisions), 8 ADRs, architecture (28 module boundaries, layer rules, data flows), data model/ERD/data dictionary (194 entities, 85 tables, 1,992-line dictionary), API inventory (521 endpoints), UX sitemap (325 routes), 267-screen inventory, security (threat model, PII, checklist), testing (169 test cases) and delivery/operations runbooks. Zero broken internal links (checked programmatically).
 - **Merged PRs:** the documentation baseline and the platform foundation entered `main` as two commits while branch protection was still being configured; the first PR through the full flow is #1 (`docs/phase-0-baseline-status`).
 - **CI:** green on `610df85` — Pint 31 files, PHPStan L6 no errors, Pest 14 passed, frontend build ok, gitleaks ok.
 - **Burn-down:** 0 of 334 person-days of functional work complete (documentation and platform do not burn the functional budget); elapsed 1 of 76 working days.

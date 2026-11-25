@@ -7,7 +7,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^13.17",
+        "laravel/framework": "^13.44",
         "laravel/sanctum": "^4.5",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.4",
